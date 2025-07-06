@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Belajar Fisika // Cyberpunk Edition</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js for doughnut charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --cyber-cyan: #00FFFF;
+            --cyber-magenta: #FF00FF;
+            --cyber-purple: #8A2BE2;
+            --bg-dark: #0d0d1a;
+            --bg-card: rgba(20, 20, 40, 0.6);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                /* Cahaya statis dari atas */
+                radial-gradient(ellipse at top, rgba(0, 255, 255, 0.15), transparent 70%),
+                /* Cahaya statis dari bawah */
+                radial-gradient(ellipse at bottom, rgba(138, 43, 226, 0.15), transparent 70%),
+                /* Latar belakang grid titik */
+                radial-gradient(
+                    circle at 1px 1px, 
+                    rgba(255,255,255,0.05) 1px, 
+                    transparent 0
+                );
+            background-size: 100% 100%, 100% 100%, 20px 20px;
+            background-attachment: fixed; /* Membuat background tetap saat scroll */
+            color: #E0E0E0;
+            overflow-x: hidden;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Custom checkbox style */
+        .custom-checkbox {
+            appearance: none;
+            background-color: #1a1a1a;
+            border: 1px solid var(--cyber-cyan);
+            border-radius: 4px;
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+        }
+
+        .custom-checkbox:checked {
+            background-color: var(--cyber-magenta);
+            border-color: var(--cyber-magenta);
+            box-shadow: 0 0 10px var(--cyber-magenta);
+        }
+
+        .custom-checkbox:checked::after {
+            content: '✔';
+            color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8rem;
+        }
+
+        .checklist-item label:has(input:checked) span {
+            text-decoration: line-through;
+            text-decoration-color: var(--cyber-magenta);
+            color: #6b7280;
+        }
+        
+        .phase-card {
+            background-color: var(--bg-card);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, var(--cyber-magenta), var(--cyber-cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 150px;
+            width: 150px;
+        }
+
+        /* Scroll Animation */
+        .scroll-animate {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .scroll-animate.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Overall Progress Bar */
+        .progress-bar-container {
+            background-color: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+        }
+
+        .progress-bar {
+            height: 12px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--cyber-purple), var(--cyber-magenta));
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="content-wrapper container mx-auto px-4 py-8 md:py-16">
+        <header class="text-center mb-12 scroll-animate">
+            <h1 class="text-4xl md:text-6xl font-black tracking-tighter gradient-text mb-4">Peta Jalan Belajar Fisika</h1>
+            <p class="text-lg text-gray-400 max-w-2xl mx-auto">Jelajahi alam semesta, dari partikel terkecil hingga galaksi terbesar, selangkah demi selangkah.</p>
+        </header>
+
+        <!-- Overall Progress Section -->
+        <section class="mb-16 scroll-animate" style="transition-delay: 100ms;">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-bold text-gray-200">Progres Keseluruhan</h2>
+                <span id="overall-progress-text" class="font-bold text-lg gradient-text">0%</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="overall-progress-bar" class="progress-bar" style="width: 0%;"></div>
+            </div>
+        </section>
+
+
+        <!-- Progress Charts Section -->
+        <section id="progress-charts" class="mb-16">
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-200 scroll-animate" style="transition-delay: 200ms;">Ringkasan Progres Fase</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 justify-items-center">
+                <!-- Chart canvases will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Learning Path Section -->
+        <main id="learning-path" class="space-y-8">
+            <!-- Phases will be injected here by JS -->
+        </main>
+        
+        <footer class="text-center mt-16 text-gray-500 scroll-animate">
+            <p>Dibuat dengan semangat eksplorasi. Progres disimpan secara lokal di browser Anda.</p>
+        </footer>
+    </div>
+
+    <script type="module">
+        // --- DATA KURIKULUM FISIKA ---
+        const curriculum = [
+            {
+                title: "Fase 1: Mekanika Klasik - Fondasi Gerak",
+                topics: [
+                    {
+                        title: "1. Kinematika",
+                        items: [
+                            "Besaran & Satuan: Memahami standar pengukuran fisika (SI).",
+                            "Vektor & Skalar: Membedakan besaran yang memiliki arah dan tidak.",
+                            "Gerak Lurus (GLB & GLBB): Menganalisis gerak pada satu dimensi.",
+                            "Gerak Parabola: Menggabungkan gerak horizontal dan vertikal.",
+                            "Gerak Melingkar: Memahami gerak pada lintasan lingkaran."
+                        ]
+                    },
+                    {
+                        title: "2. Dinamika & Hukum Newton",
+                        items: [
+                            "Hukum Newton I, II, III: Memahami konsep inersia, gaya, dan aksi-reaksi.",
+                            "Gaya Gesek, Gaya Normal, Gaya Berat: Mengidentifikasi berbagai jenis gaya.",
+                            "Aplikasi Hukum Newton: Menganalisis sistem benda (katrol, bidang miring)."
+                        ]
+                    },
+                    {
+                        title: "3. Usaha, Energi, & Daya",
+                        items: [
+                            "Konsep Usaha & Energi: Memahami hubungan antara gaya dan perpindahan.",
+                            "Energi Kinetik & Potensial: Menganalisis energi gerak dan energi posisi.",
+                            "Hukum Kekekalan Energi Mekanik: Menerapkan prinsip konservasi energi.",
+                            "Daya: Memahami laju transfer energi."
+                        ]
+                    },
+                    {
+                        title: "4. Momentum & Impuls",
+                        items: [
+                            "Konsep Momentum & Impuls: Memahami 'kuantitas gerak' dan perubahan momentum.",
+                            "Hukum Kekekalan Momentum: Menganalisis tumbukan (lenting, tidak lenting).",
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "Fase 2: Termodinamika & Fluida",
+                topics: [
+                    {
+                        title: "5. Suhu & Kalor",
+                        items: [
+                            "Konsep Suhu & Termometer: Mengukur derajat panas suatu benda.",
+                            "Pemuaian Zat: Menganalisis perubahan ukuran akibat suhu.",
+                            "Kalor & Perubahan Wujud: Memahami transfer energi panas dan efeknya.",
+                            "Asas Black: Menerapkan kekekalan energi pada sistem termal."
+                        ]
+                    },
+                    {
+                        title: "6. Teori Kinetik Gas & Termodinamika",
+                        items: [
+                            "Sifat Gas Ideal: Memodelkan perilaku gas secara mikroskopis.",
+                            "Hukum I Termodinamika: Memahami kekekalan energi dalam sistem gas (usaha, kalor, energi dalam).",
+                            "Siklus Termodinamika (Carnot): Menganalisis efisiensi mesin kalor."
+                        ]
+                    },
+                    {
+                        title: "7. Mekanika Fluida",
+                        items: [
+                            "Fluida Statis (Tekanan Hidrostatis, Hukum Pascal, Archimedes): Menganalisis fluida diam.",
+                            "Fluida Dinamis (Persamaan Kontinuitas, Asas Bernoulli): Menganalisis fluida bergerak."
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "Fase 3: Gelombang & Optika",
+                topics: [
+                    {
+                        title: "8. Getaran & Gelombang",
+                        items: [
+                            "Getaran Harmonis Sederhana: Menganalisis gerak osilasi (pegas, bandul).",
+                            "Jenis & Sifat Gelombang: Memahami gelombang mekanik dan elektromagnetik.",
+                            "Superposisi & Interferensi: Menganalisis penjumlahan gelombang.",
+                            "Gelombang Bunyi & Efek Doppler: Memahami sifat bunyi dan perubahan frekuensi."
+                        ]
+                    },
+                    {
+                        title: "9. Optika Geometris",
+                        items: [
+                            "Pemantulan Cahaya: Menganalisis cermin datar dan lengkung.",
+                            "Pembiasan Cahaya (Hukum Snellius): Menganalisis lensa cembung dan cekung.",
+                            "Alat Optik: Memahami cara kerja mata, lup, mikroskop, dan teleskop."
+                        ]
+                    },
+                    {
+                        title: "10. Optika Fisis",
+                        items: [
+                            "Difraksi & Interferensi Cahaya: Memahami sifat gelombang cahaya (celah ganda Young).",
+                            "Polarisasi Cahaya: Menganalisis arah getar gelombang cahaya."
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "Fase 4: Listrik & Magnet",
+                topics: [
+                    {
+                        title: "11. Listrik Statis",
+                        items: [
+                            "Muatan & Hukum Coulomb: Memahami interaksi antar muatan listrik.",
+                            "Medan Listrik & Potensial Listrik: Menganalisis ruang di sekitar muatan.",
+                            "Kapasitor: Memahami komponen penyimpan energi listrik."
+                        ]
+                    },
+                    {
+                        title: "12. Listrik Dinamis",
+                        items: [
+                            "Arus Listrik & Hukum Ohm: Menganalisis aliran muatan dalam rangkaian.",
+                            "Rangkaian Seri & Paralel: Merangkai resistor dan sumber tegangan.",
+                            "Hukum Kirchhoff: Menganalisis rangkaian listrik kompleks.",
+                            "Energi & Daya Listrik: Menghitung penggunaan energi listrik."
+                        ]
+                    },
+                    {
+                        title: "13. Medan Magnet & Induksi Elektromagnetik",
+                        items: [
+                            "Medan Magnet di Sekitar Arus (Hukum Biot-Savart & Ampere): Memahami sumber medan magnet.",
+                            "Gaya Lorentz: Menganalisis gaya pada muatan bergerak dalam medan magnet.",
+                            "Induksi Elektromagnetik (Hukum Faraday & Lenz): Memahami bagaimana medan magnet menghasilkan listrik.",
+                            "Arus Bolak-balik (AC): Menganalisis rangkaian RLC."
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "Fase 5: Fisika Modern",
+                topics: [
+                    {
+                        title: "14. Relativitas Khusus",
+                        items: [
+                            "Postulat Einstein: Memahami dasar teori relativitas.",
+                            "Dilatasi Waktu & Kontraksi Panjang: Menganalisis efek gerak mendekati kecepatan cahaya.",
+                            "Kesetaraan Massa-Energi (E=mc²): Memahami hubungan fundamental antara massa dan energi."
+                        ]
+                    },
+                     {
+                        title: "15. Konsep Foton & Sifat Gelombang Partikel",
+                        items: [
+                            "Radiasi Benda Hitam & Efek Fotolistrik: Memahami kuantisasi energi cahaya.",
+                            "Hipotesis de Broglie: Memahami bahwa partikel dapat bersifat seperti gelombang."
+                        ]
+                    },
+                    {
+                        title: "16. Fisika Atom & Inti",
+                        items: [
+                            "Model Atom (Thomson, Rutherford, Bohr): Melacak perkembangan model atom.",
+                            "Struktur Inti Atom: Memahami proton, neutron, dan kestabilan inti.",
+                            "Radioaktivitas: Menganalisis peluruhan inti atom.",
+                            "Reaksi Fisi & Fusi: Memahami reaksi pembelahan dan penggabungan inti."
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // --- CHECKLIST & CHART LOGIC ---
+        const learningPathContainer = document.getElementById('learning-path');
+        const chartsContainer = document.querySelector('#progress-charts .grid');
+        const storageKey = 'physicsLearningProgress'; // Kunci baru untuk fisika
+        let charts = {};
+
+        function generateChecklist() {
+            curriculum.forEach((phase, phaseIndex) => {
+                const phaseEl = document.createElement('div');
+                phaseEl.className = 'phase-card rounded-lg p-6 shadow-lg scroll-animate';
+                phaseEl.innerHTML = `<h2 class="text-2xl font-bold mb-4 border-b border-cyan-500/30 pb-2 gradient-text">${phase.title}</h2>`;
+
+                const topicsContainer = document.createElement('div');
+                topicsContainer.className = 'space-y-4';
+
+                phase.topics.forEach((topic, topicIndex) => {
+                    const topicEl = document.createElement('div');
+                    topicEl.innerHTML = `<h3 class="text-lg font-semibold text-gray-300 mb-2">${topic.title}</h3>`;
+
+                    const itemsList = document.createElement('ul');
+                    itemsList.className = 'space-y-2 pl-4';
+                    
+                    topic.items.forEach((item, itemIndex) => {
+                        const itemId = `p${phaseIndex}-t${topicIndex}-i${itemIndex}`;
+                        const itemEl = document.createElement('li');
+                        itemEl.className = 'checklist-item';
+                        itemEl.innerHTML = `
+                            <label for="${itemId}" class="flex items-start gap-3 cursor-pointer group">
+                                <input type="checkbox" id="${itemId}" data-phase="${phaseIndex}" class="custom-checkbox mt-1">
+                                <span class="text-gray-400 group-hover:text-white transition-colors">${item}</span>
+                            </label>
+                        `;
+                        itemsList.appendChild(itemEl);
+                    });
+                    topicEl.appendChild(itemsList);
+                    topicsContainer.appendChild(topicEl);
+                });
+
+                phaseEl.appendChild(topicsContainer);
+                learningPathContainer.appendChild(phaseEl);
+            });
+        }
+
+        function generateChartContainers() {
+            curriculum.forEach((phase, phaseIndex) => {
+                const chartWrapper = document.createElement('div');
+                chartWrapper.className = 'phase-card rounded-lg p-4 flex flex-col items-center justify-center scroll-animate';
+                chartWrapper.style.transitionDelay = `${300 + phaseIndex * 50}ms`;
+
+                const chartContainer = document.createElement('div');
+                chartContainer.className = 'chart-container';
+                chartContainer.innerHTML = `<canvas id="chart-phase-${phaseIndex}"></canvas>`;
+
+                const title = document.createElement('h3');
+                title.className = 'text-md font-semibold text-center mt-3 text-gray-300';
+                title.textContent = `Fase ${phaseIndex + 1}`;
+
+                chartWrapper.appendChild(chartContainer);
+                chartWrapper.appendChild(title);
+                chartsContainer.appendChild(chartWrapper);
+            });
+        }
+
+        function updateCharts() {
+            curriculum.forEach((phase, phaseIndex) => {
+                const checkboxes = document.querySelectorAll(`input[data-phase='${phaseIndex}']`);
+                const total = checkboxes.length;
+                const completed = document.querySelectorAll(`input[data-phase='${phaseIndex}']:checked`).length;
+                const remaining = total - completed;
+                const ctx = document.getElementById(`chart-phase-${phaseIndex}`).getContext('2d');
+                
+                if (charts[phaseIndex]) {
+                    charts[phaseIndex].data.datasets[0].data = [completed, remaining];
+                    charts[phaseIndex].update();
+                } else {
+                    charts[phaseIndex] = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Selesai', 'Belum'],
+                            datasets: [{
+                                data: [completed, remaining],
+                                backgroundColor: ['#FF00FF', '#2a2a3a'],
+                                borderColor: 'rgba(20, 20, 40, 0.6)',
+                                borderWidth: 4,
+                                hoverOffset: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '70%',
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: '#000',
+                                    titleColor: '#fff',
+                                    bodyColor: '#ccc'
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function updateOverallProgress() {
+            const allCheckboxes = document.querySelectorAll('#learning-path input[type="checkbox"]');
+            const totalTasks = allCheckboxes.length;
+            const completedTasks = document.querySelectorAll('#learning-path input[type="checkbox"]:checked').length;
+            
+            const percentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+            const progressText = document.getElementById('overall-progress-text');
+            const progressBar = document.getElementById('overall-progress-bar');
+
+            progressText.textContent = `${percentage.toFixed(1)}%`;
+            progressBar.style.width = `${percentage}%`;
+        }
+
+        function saveProgress() {
+            const progress = {};
+            const checkboxes = document.querySelectorAll('#learning-path input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                progress[cb.id] = cb.checked;
+            });
+            localStorage.setItem(storageKey, JSON.stringify(progress));
+        }
+
+        function loadProgress() {
+            const savedProgress = JSON.parse(localStorage.getItem(storageKey));
+            if (savedProgress) {
+                Object.keys(savedProgress).forEach(id => {
+                    const checkbox = document.getElementById(id);
+                    if (checkbox) {
+                        checkbox.checked = savedProgress[id];
+                    }
+                });
+            }
+        }
+
+        // --- SCROLL ANIMATION LOGIC ---
+        function setupScrollAnimation() {
+            const animatedElements = document.querySelectorAll('.scroll-animate');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target); // Animate only once
+                    }
+                });
+            }, {
+                threshold: 0.1 // Trigger when 10% of the element is visible
+            });
+
+            animatedElements.forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            generateChartContainers();
+            generateChecklist();
+            loadProgress();
+            updateCharts();
+            updateOverallProgress();
+            setupScrollAnimation();
+
+            learningPathContainer.addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox') {
+                    saveProgress();
+                    updateCharts();
+                    updateOverallProgress();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
